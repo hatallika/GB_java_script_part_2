@@ -50,6 +50,11 @@ class Header {
   constructor() {
     this.$container = document.querySelector('header');
     this.$button = this.$container.querySelector('.cart-button');
+    this.$search = this.$container.querySelector('#search');
+  }
+
+  setSearchHandler(callback) {
+    this.$search.addEventListener('input', callback);
   }
 
   setButtonHandler(callback) {
@@ -60,10 +65,16 @@ class Header {
 class GoodsList {
     constructor() {
       this.api = new Api();
+      this.header = new Header();
       this.$goodsList = document.querySelector('.goods-list');
       this.goods = [];
+      this.filteredGoods = [];
 
       //this.api.fetch(this.onFetchError.bind(this), this.onFetchSuccess.bind(this));
+
+      this.header.setSearchHandler((evt) => {
+        this.search(evt.target.value);
+      })
 
       const fetch = this.api.fetchPromise();
 
@@ -73,9 +84,18 @@ class GoodsList {
       console.log(fetch);
     }
 
+    search(str) {
+      if(str === '') {
+        this.filteredGoods = this.goods;
+      }
+      const regexp = new RegExp(str, 'gi');
+      this.filteredGoods = this.goods.filter((good) => regexp.test(good.title));
+      this.render();
+    }
 
     onFetchSuccess(data) {
       this.goods = data.map(({title, price}) => new GoodsItem(title, price));
+      this.filteredGoods = this.goods;
       this.render();
     }
 
@@ -85,7 +105,7 @@ class GoodsList {
 
     render() {
       this.$goodsList.textContent = '';
-      this.goods.forEach((good) => {
+      this.filteredGoods.forEach((good) => {
           this.$goodsList.insertAdjacentHTML('beforeend', good.getHtml());
       })
     }
@@ -95,8 +115,5 @@ function openCart () {
   console.log('cart');
 }
 
-const header = new Header();
-
-header.setButtonHandler(cart.openCartHandler);
 
 const goodsList = new GoodsList();
